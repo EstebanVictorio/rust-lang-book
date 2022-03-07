@@ -97,14 +97,14 @@ fn main() {
     println!("{}", elem);
   }
 
-  // This case prints from index 2 to 1. In slice syntax (n..), if you add a number at the beginning,
+  // This case prints from index 2 to 5. In slice syntax (n..), if you add a number at the beginning,
   // but skip the end, it'll go through until the last element.
   println!("Printing from index 2 to 4");
   for elem in &nums[2..] {
     println!("{}", elem);
   }
 
-  // This case prints from index 2 to 1. In slice syntax (n..m), you do not necessarily
+  // This case prints from index 2 to 3. In slice syntax (n..m), you do not necessarily
   // need to begin from the first element, you can pick whatever section you want.
   println!("Printing from index 2 to 3");
   for elem in &nums[2..4] {
@@ -118,7 +118,7 @@ fn main() {
     println!("{}", elem);
   }
 
-  // This case prints from index 2 to 1. In slice syntax (..), you
+  // This case prints from index 0 to 5. In slice syntax (..), you
   // state that you just want all elements from start to end, including the final element.
   println!("Printing all elements again");
   for elem in &nums[..] {
@@ -126,14 +126,14 @@ fn main() {
   }
 
   // Slices are not reserved for numbers. You can also use them in strings, and provide
-  // a quite powerful mechanism to prevent you from mutating the data these slices point to:
-  // Since slices are references too, and therefore, follow the same rules.
+  // a quite powerful mechanism to prevent you from mutating the data these slices point to,
+  // since slices are references too, and therefore, follow the same rules.
   // If you were to have a function that obtains the first and the last word from file sentences for each line,
   // reading thru each line while storing the current line in a variable, then getting the first and the last word from that line,
-  // and then tried to modify or clean the line from where the words were read by a slice, you'd get a compiler errors, since
+  // and then tried to modify or clean the line from where the words were read by a slice, you'd get a compiler error, since
   // immutable references do not expect the data they point too to change (mutable reference/variable).
   // The following example demonstrates this clearly:
-  let file = File::open("path_here/file.txt").unwrap();
+  let file = File::open("file.txt").unwrap();
   let mut buffer = BufReader::new(file);
   let mut line = String::new();
   let mut read = buffer.read_line(&mut line).unwrap();
