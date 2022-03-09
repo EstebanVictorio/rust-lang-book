@@ -1,10 +1,41 @@
 use std::fmt;
 
+struct Shape {
+    width: usize,
+    height: usize,
+}
+
 struct User {
     active: bool,
     email: String,
     username: String,
     sign_in_count: u64,
+}
+
+struct Rectangle {
+    shape: Shape,
+}
+
+impl fmt::Display for Rectangle {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Rectangle -> Width: {}, Height: {}, Area: {}",
+            self.shape.width,
+            self.shape.height,
+            self.shape.width * self.shape.height,
+        )
+    }
+}
+
+impl Rectangle {
+    fn get_area(&self) -> usize {
+        self.shape.width * self.shape.height
+    }
+
+    fn can_hold(&self, rect: &Rectangle) -> bool {
+        self.shape.width > rect.shape.width && self.shape.height > rect.shape.height
+    }
 }
 
 impl fmt::Display for User {
@@ -77,6 +108,47 @@ fn main() {
      * The following is invalid due to different types
      */
     // print!("{}", one_two_three_color !== three_value_tuple);
+    /**
+     * Let's create another example with more meaning
+     * Imagine that you want to represent a rectangle from which to calculate some area
+     * So, instead of calculating the area in whatever function by passing a "Rectangle" struct or its width and height,
+     * let's implement the Display trait and print the area right away on the struct definitions above.
+     * But, also, let's write it in a way that implicates taking into account that we might also define different types
+     * of shape in the future, so, we'd write first a Rectangle with a shape property inside of type Shape.
+     * After that, let's create a "Rectangle" struct and print it out:
+     */
+    let rectangle = Rectangle {
+        shape: Shape {
+            width: 30,
+            height: 50,
+        },
+    };
+    println!("All info: {}", rectangle);
+    println!("Only area: {}", rectangle.get_area());
+
+    /**
+     * Then, after creating a rectangle, let's add a functionality that helps us see if we can fit one rectangle
+     * inside another one, so we'd write a "can_hold()" method inside the "impl Rectangle":
+     */
+    println!(
+        "Can hold: {}",
+        rectangle.can_hold(&Rectangle {
+            shape: Shape {
+                width: 20,
+                height: 40,
+            },
+        })
+    );
+
+    println!(
+        "Can hold: {}",
+        rectangle.can_hold(&Rectangle {
+            shape: Shape {
+                width: 40,
+                height: 60,
+            },
+        })
+    );
 }
 
 /** A function to create a new User */
