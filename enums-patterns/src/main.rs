@@ -1,4 +1,5 @@
 use std::fmt;
+use std::num;
 
 /**
  * The concept of enums also exists in Rust
@@ -60,6 +61,45 @@ impl Shape {
             })),
             _ => None,
         }
+    }
+
+    /** Here we created a function that allows to check if a shape is a quadrangle,
+     * but without caring for the exact values in the shape, we just want to know
+     * if a shape belongs to two particular variants of the Shape enum */
+    fn is_quadrangle(shape: &Option<Shape>) -> bool {
+        match shape {
+            Some(Shape::Rectangle(_)) => return true,
+            Some(Shape::Square(_)) => return true,
+            _ => return false,
+        }
+    }
+
+    /** We can also use if let control flow to create our shapes */
+    fn non_guaranteed_shape(shape: &str) -> Option<Shape> {
+        if let "triangle" = shape {
+            return Some(Shape::Triangle(ShapeAttributes {
+                ..Default::default()
+            }));
+        }
+
+        if let "rectangle" = shape {
+            return Some(Shape::Rectangle(ShapeAttributes {
+                ..Default::default()
+            }));
+        }
+        if let "circle" = shape {
+            return Some(Shape::Circle(ShapeAttributes {
+                ..Default::default()
+            }));
+        }
+
+        if let "square" = shape {
+            return Some(Shape::Square(ShapeAttributes {
+                ..Default::default()
+            }));
+        }
+
+        Some(Shape::Unknown)
     }
 }
 
@@ -132,25 +172,6 @@ fn main() {
     println!("Second address: {}", v6_ip_address);
     println!("Third address: {}", v4_ip_address_split);
 
-    let triangle = Shape::Triangle(ShapeAttributes {
-        width: 10,
-        height: 10,
-    });
-
-    let rectangle = Shape::Rectangle(ShapeAttributes {
-        width: 10,
-        height: 10,
-    });
-
-    let circle = Shape::Circle(ShapeAttributes {
-        width: 10,
-        height: 10,
-    });
-
-    let square = Shape::Square(ShapeAttributes {
-        width: 10,
-        height: 10,
-    });
     let triangle_by_factory = Shape::create("triangle").unwrap_or(Shape::Unknown);
     let circle_by_factory = Shape::create("circle").unwrap_or(Shape::Unknown);
     let rectangle_by_factory = Shape::create("rectangle").unwrap_or(Shape::Unknown);
@@ -161,4 +182,17 @@ fn main() {
     println!("Rectangle -> {}", rectangle_by_factory);
     println!("Square -> {}", square_by_factory);
     println!("Rhomboid -> {}", rhomboid_by_factory);
+
+    let unknown_shape = Shape::non_guaranteed_shape("diamond").unwrap();
+    let another_triangle = Shape::create("triangle");
+    let another_square = Shape::create("square");
+    println!("Unknown shape -> {}", unknown_shape);
+    println!(
+        "Is triangle a quadrangle: {}",
+        Shape::is_quadrangle(&another_triangle)
+    );
+    println!(
+        "Is square a quadrangle: {}",
+        Shape::is_quadrangle(&another_square)
+    );
 }
