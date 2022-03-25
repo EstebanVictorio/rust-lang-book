@@ -1,11 +1,11 @@
 // In this lesson, we'll learn about collections
 use packages_crates_modules::shape_type::Type;
-use std::cmp::max;
+
 /**
  * The first one being the Vector, we can create vectors either with the
  * new method from the Vec type or use the vec![] macro.
  * Typically you would initialize the vectors with some values, but let's do that from iteration
- * to be a little bit more explocit.
+ * to be a little bit more explicit.
  */
 use std::collections::HashMap;
 
@@ -59,7 +59,9 @@ fn main() {
     println!("{}", s4);
     let utf_8_bytes = utf_8_values();
     println!("UTF 8 String bytes: {}", utf_8_bytes);
+    /** Here we introduce the use of hashmaps, which are collections that have values in the form of "key,value" pairs */
     let mut map: HashMap<&str, Type> = HashMap::new();
+    // To insert values into the map, you specify its key and its value with the method ".insert(key, value)"
     map.insert("triangle", Type::create("triangle").unwrap());
     map.insert("circle", Type::create("circle").unwrap());
     map.insert("square", Type::create("square").unwrap());
@@ -101,6 +103,28 @@ fn main() {
     println!("====="); // Separation line :P
                        // And we print again after accesing a possible entry and updating its width to 50
     print_all_map(&another_map);
+    let six_items = vec![1, 2, 3, 4, 5];
+    let median_of_a_six_items_vec = median_of(&six_items);
+    let vec_len = median_of_a_six_items_vec.len();
+    println!("Median of a six items vec:");
+    for (index, item) in median_of_a_six_items_vec.into_iter().enumerate() {
+        if index == (vec_len - 1) {
+            println!("{}", item);
+            break;
+        }
+        print!("{}, ", item);
+    }
+    /** You can also have a tuple with key and value using ".collect()" from the iterator you get from a map */
+    let iter_key_value_map: HashMap<_, _> = map.into_iter().collect();
+    for (key, value) in iter_key_value_map {
+        println!("Key: {}, Value: {}", key, value);
+    }
+
+    let another_vec = vec![1, 1, 2, 2, 3, 3, 3];
+    println!("Mode of another vec: {}", mode_of(&another_vec));
+    println!("\"asd\" to pig latin: {}", to_pig_latin(&"asd"));
+    println!("\"first\" to pig latin: {}", to_pig_latin(&"first"));
+    println!("\"apple\" to pig latin: {}", to_pig_latin(&"apple"));
 }
 
 /** Strings behave like collections too.
@@ -186,30 +210,79 @@ fn print_all_map(map: &HashMap<&str, Type>) {
     }
 }
 
-fn median_of(list: &Vec<i32>) -> i32 {
+/** For practice, we can, with the help of hash maps, get the median of a vector */
+fn median_of(list: &Vec<i32>) -> Vec<i32> {
     let len = list.len();
 
     if len == 0 {
-        return -1;
+        return vec![-1];
     }
 
     if len % 2 == 0 {
-        let first = list.get(len - 1).unwrap();
-        let second = list.get(len).unwrap();
+        let first = list.get((len / 2) - 1).unwrap();
+        let second = list.get(len / 2).unwrap();
+        return vec![*first, *second];
     }
 
-    let median = list.get(len - 1).unwrap(); //TODO: Finish median_of
+    let median = list.get(len / 2).unwrap();
+    vec![*median]
 }
 
-fn mode_of(iter: &Vec<i32>) -> i32 {
-    let len = iter.len();
+/** For practice, we can, with the help of hash maps, get the mode of a vector */
+fn mode_of(iter: &Vec<i32>) -> usize {
     let mut map: HashMap<i32, usize> = HashMap::new();
     for elem in iter {
         let reference = map.entry(*elem).or_insert(0);
         *reference += 1;
     }
 
-    let values = map.values().collect(); // TODO: Finish mode_of
+    let key_value_map: HashMap<_, _> = map.into_iter().collect();
+    let mut max: usize = 0;
+    let mut max_value: usize = 0;
+    for (key, value) in key_value_map {
+        println!("Value: {}, Max: {}", value, max_value);
+        if value > max_value {
+            max_value = value;
+            max = key as usize;
+        }
+    }
 
-    1
+    max
+}
+
+/** Here we write a function that will help us determine if a letter is a vowel or not, using ascii number codes and casting the letter to an integer */
+fn is_vowel(letter: &char) -> bool {
+    let vowels: [i8; 5] = [97, 101, 105, 111, 117];
+    let letter_ascii = letter.to_ascii_lowercase() as i8;
+    for vowel in vowels {
+        if letter_ascii == vowel {
+            return true;
+        }
+    }
+    false
+}
+
+/** Here we write a function that will convert a word to its pig lating version, depending on which type of letter starts each word with, vowel or consonant */
+fn to_pig_latin(word: &str) -> String {
+    let mut pig_latin_word = String::new();
+    let mut chars = word.chars();
+    let first_letter = chars.next();
+
+    match first_letter {
+        None => (),
+        Some(val) => {
+            let starts_with_vowel = is_vowel(&val);
+            if !starts_with_vowel {
+                for item in chars.into_iter() {
+                    pig_latin_word.push(item);
+                }
+                let string = format!("-{}{}", &first_letter.unwrap(), "ay");
+                pig_latin_word.push_str(&string[..]);
+                return pig_latin_word;
+            }
+            let string = format!("{}-{}", word, "hay");
+            pig_latin_word.push_str(&string[..]);
+        }
+    }
+    pig_latin_word
 }
