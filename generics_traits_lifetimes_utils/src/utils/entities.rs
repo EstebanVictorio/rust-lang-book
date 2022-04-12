@@ -128,3 +128,38 @@ pub trait PointInfo {
 //
 // Hence, we can do the following on, say, integers:
 // let s = 3.to_string();
+
+// Going further, if you were to try to return a reference of a function's local value
+// even when specifying lifetime generic parameters, the compiler won't let you pass
+// since the lifetime of the returned value is not related with the lifetime of the references
+// passed into the function, because the reference gets dropped as soon as the function ends
+// pub fn longest_2<'a>(str1: &'a str) -> &'a str {
+//   let a = String::from("a");
+//   a.as_str()
+// }
+// Remember, we cannot modify the lifetime of references, just let the compiler know how the references
+// relate to each other in terms of their own lifetime
+// Lifetime Generic parameters are more a way to ensure operations on lifetimes rather
+// than being able to modify lifetimes.
+
+// The same logic happens for lifetimes in structs
+pub struct Super<'a> {
+  pub message: &'a String,
+}
+
+// For structs, showcasing the third rule of lifetimes,
+// here we add a Struct that has a lifetime parameter in the type declaration, which is needed for declaration.
+// Then we see two references, &self and message, and one reference in the return type
+// Because of the third rule of the lifetime mechanism (ellision), we do not need to indicate
+// the lifetime parameters for this method, as the lifetime parameter for the return types is the
+// same as the &self lifetime.
+// TODO: Add the static lifetime lesson next
+impl<'a> Super<'a> {
+  pub fn super_info(&self, message: &str) -> &str {
+    println!("{}", message);
+    self.message
+  }
+}
+
+// So, by specifying lifetimes in struct, we ensure that the references in the struct live as long as the
+// structs themselves.

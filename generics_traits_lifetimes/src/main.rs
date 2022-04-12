@@ -1,6 +1,18 @@
 use std::fmt::Display;
-use utils::entities::{Point, PointInfo, PointMixCreator};
-use utils::functions::{get_largest, get_largest_item, get_largest_item_ref};
+use utils::entities::{Point, PointInfo, PointMixCreator, Super};
+use utils::functions::{
+    get_largest, get_largest_item, get_largest_item_ref, longest, longest_with_custom_msg,
+};
+// There's a special lifetime called the Static Lifetime
+// This lifetime specifies a reference that lives for the entire program's execution lifetime
+// There will be times where you might've some references that need the lifetime parameter as
+// the compiler will tell you they need it. And sometimes you might encounter the compiler
+// suggesting to use the 'static lifetime as the lifetime specified, but often times
+// this comes from the perspective that you might be creating dangling references, and
+// is often solved by fixing those cases by specifying the correct lifetime or changing your code
+// so the reference does not live long enough, rather than just getting away with specifying the 'static
+// lifetime parameter
+const string: &'static str = "asd";
 fn main() {
     let number_list = vec![34, 50, 25, 100, 65];
     let letter_list = vec!['A', 'B', 'C', 'D', 'E'];
@@ -49,6 +61,50 @@ fn main() {
     describe_multiple_pointinfo_display_with_where(&point, &another_point);
     let built_point = produce_point(1, 2);
     built_point.info();
+
+    // Lifetimes is a concept that allows the borrow checker to determine how long a reference will live.
+    // This mechanism prevents for dangling references to exist
+    //
+    // The following code is invalid, given that the first variable, "x" pretends to hold a value inside a
+    // scope that has a definite "lifetime" which is inside the outer block scope and ends before the whole block ends
+    // {
+    //   let x = 0;
+    // {
+    //   let y = 5;
+    //   x = &y;
+    // }
+    //
+    // println!("x: {}", x);
+    // }
+    //
+
+    // For example, taking the following block, it's very similar to the previous code comment block
+    // let ref_a; // We declare a variable here named "ref_a"
+    // {
+    //     let str_a = "a"; // Then, in an inner scope, we declare another one;
+    //     ref_a = &str_a; // And we assign a reference to "ref_a" that points to "str_a"
+    // }
+    // println!("The longest string is: {}", longest("aa", ref_a)); //
+    // println!("Using ref erroneously due to bigger lifetime: {}", ref_a);
+
+    // The same mechanisms happen with structs in terms of lifetimes and their fields.
+    // The following code is valid because a field from Super has a lifetime generic parameter
+    // that indicates that, meanwhile the reference that it's field points lives, you can create
+    // a struct of Super that does not outlive the reference.
+    // let mut ref_b; // NOTE: This code block is invalid
+    // {
+    //     let a = String::from("ats");
+    //     ref_b = &a;
+    // }
+
+    // let super_struct = Super { message: ref_b };
+    // println!("{}", super_struct.message);
+    let mut ref_b = String::from("asd");
+
+    let super_struct = Super { message: &ref_b };
+    let message = super_struct.super_info("Hey there! I'm a new super info!");
+    println!("And I have the following message!: {}", message);
+    longest_with_custom_msg("String 1", "String two", "The winner is");
 }
 
 /** We can also set parameter types as trait */
