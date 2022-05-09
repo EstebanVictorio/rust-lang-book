@@ -27,16 +27,25 @@ impl Search {
     format!("{}, arg name: {}", INVALID_EMPTY_ARGUMENT, name)
   }
 
-  pub fn new(args: &Vec<String>) -> Result<Search, String> {
+  pub fn new(mut args: env::Args) -> Result<Search, String> {
     if args.len() < 3 {
       return Err(format!("{}", NOT_ENOUGH_ARGUMENTS));
     }
 
+    args.next();
+
     let invalid_query_err_msg = Search::get_invalid_arg_error_message("query");
     let invalid_location_err_msg = Search::get_invalid_arg_error_message("location");
 
-    let query = args.get(1).expect(&invalid_query_err_msg);
-    let location = args.get(2).expect(&invalid_location_err_msg);
+    let query = match args.next() {
+      Some(arg) => arg,
+      None => panic!(invalid_query_err_msg),
+    };
+
+    let location = match args.next() {
+      Some(arg) => arg,
+      None => panic!(invalid_location_err_msg),
+    };
 
     Ok(Search {
       query: String::from(query),
@@ -70,22 +79,31 @@ impl Search {
 }
 
 pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
-  let mut results = vec![];
-  for line in contents.lines() {
-    if line.contains(query) {
-      results.push(line);
-    }
-  }
-  results
+  // let mut results = vec![];
+  // for line in contents.lines() {
+  //   if line.contains(query) {
+  //     results.push(line);
+  //   }
+  // }
+  // results
+
+  contents
+    .lines()
+    .filter(|line| line.contains(query))
+    .collect()
 }
 
 pub fn search_case_insensitive<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
   let query = query.to_lowercase();
-  let mut results = vec![];
-  for line in contents.lines() {
-    if line.to_lowercase().contains(&query) {
-      results.push(line);
-    }
-  }
-  results
+  // let mut results = vec![];
+  // for line in contents.lines() {
+  //   if line.to_lowercase().contains(&query) {
+  //     results.push(line);
+  //   }
+  // }
+  // results
+  contents
+    .lines()
+    .filter(|line| line.contains(&query))
+    .collect()
 }
