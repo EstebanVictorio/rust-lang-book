@@ -39,12 +39,12 @@ impl Search {
 
     let query = match args.next() {
       Some(arg) => arg,
-      None => panic!(invalid_query_err_msg),
+      None => panic!("{}", invalid_query_err_msg),
     };
 
     let location = match args.next() {
       Some(arg) => arg,
-      None => panic!(invalid_location_err_msg),
+      None => panic!("{}", invalid_location_err_msg),
     };
 
     Ok(Search {
