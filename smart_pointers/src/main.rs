@@ -1,5 +1,5 @@
 use std::boxed::Box;
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 
 // In this lesson, we'll work with smart pointers
 // These aren't hugely different from usual references that work as pointers to memory addresses as well
@@ -98,7 +98,38 @@ fn main() {
     // custom smart pointer type.
     // The compiler is smart enough to infer this, so, the deref syntax in types that implement the Deref trait is possible
     // and interoperable to use.
+
+    // Another term that's powerful for interoperable types is deref coercion
+    // Putting it simply, Deref coercion is returning a reference from a type
+    // that implements the Deref trait and returns a reference to another type.
+    // Imagine using a "from_ref" function that receives a string slice.
+    // We can wrap a string with our custom box and use the reference to that string
+    // as the value passed in to that reference, for example:
+    let hello = CustomBox::new(String::from("Hey!"));
+    from_ref(&hello);
+    // If deref coercion didn't exist, we would have to write multiple dereferencing until we got to the actual
+    // reference we wanted to use. In the example above, that'd be:
+    let hello = CustomBox::new(String::from("Hey!"));
+    from_ref(&(*hello)[..]);
+    // With deref coercion, the compiler will analyze the types and use "deref()" as many times as necessary to
+    // to get to the actual reference to match the parameter's type for the type reference we are using. Since this
+    // calls are resolved at compile time, there is no runtime penalty for taking advantage of this Rust's feature.
+
+    // We can also obtain mutable references by implementing the DerefMut trait instead
+    let mut hello_2 = CustomBox::new(String::from("Hey 2!"));
+    from_ref_mut(&mut hello_2);
 }
+
+// TODO: finish printing mutable reference
+fn from_ref_mut(msg: &mut str) {
+    for item in msg.bytes() {}
+    println!();
+}
+
+fn from_ref(msg: &str) {
+    println!("From ref: {}", msg);
+}
+
 // We can also create custom types that can work with the dereference operator!
 // Let's do that:
 struct CustomBox<T>(T);
@@ -106,6 +137,12 @@ struct CustomBox<T>(T);
 impl<T> CustomBox<T> {
     fn new(x: T) -> CustomBox<T> {
         CustomBox(x)
+    }
+}
+
+impl<T> DerefMut for CustomBox<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 
