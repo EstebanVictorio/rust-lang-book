@@ -1,5 +1,6 @@
 use std::boxed::Box;
 use std::ops::{Deref, DerefMut};
+use std::rc::Rc;
 
 // In this lesson, we'll work with smart pointers
 // These aren't hugely different from usual references that work as pointers to memory addresses as well
@@ -11,6 +12,11 @@ use std::ops::{Deref, DerefMut};
 
 enum List {
     Cons(i32, Box<List>),
+    Null,
+}
+
+enum RcList {
+    Cons(i32, Rc<RcList>),
     Null,
 }
 
@@ -118,16 +124,85 @@ fn main() {
     // We can also obtain mutable references by implementing the DerefMut trait instead
     let mut hello_2 = CustomBox::new(String::from("Hey 2!"));
     from_ref_mut(&mut hello_2);
-}
 
-// TODO: finish printing mutable reference
-fn from_ref_mut(msg: &mut str) {
-    for item in msg.bytes() {}
-    println!();
+    // Another that's important to note in the pointers topic is the Drop trait.
+    // This trait allows you to customize what happens when a value is about to go out of scope.
+    // Rust places resource freeing code automatically, so you don't have to worry about memory leaks.
+    // In other languages, this has to be done manually.
+    // In the following example, we'll set some structs that will have some code executed due to our implementation
+    // of such struct with the Drop trait. We'll print what data is about to go out of scope and the program will eventually end
+    let c = CustomSmartPointer {
+        data: String::from("String one"),
+    };
+    let d = CustomSmartPointer {
+        data: String::from("String two"),
+    };
+    println!("Custom smart pointer created");
+    // When dropping values, the code that is implemented by the "drop" function will have its executions run in reverse order of variable creation,
+    // so, code inside of the "drop" implementation will run first with the "d" variable data and then the "c" variable data.
+
+    // There's a function to force drop values manually, which is found in std::mem::drop crate.
+    // This function explicitly drops a value.
+    // We cannot use the "drop" implementation directly because we cannot avoid that the compiler will always place "drop" calls
+    // at the end of the main function.
+
+    // Another type of smart pointer is the Rc<T> type, which allows multiple ownership
+    // of a resource by creating a counter of references that point to the same data
+    // The Rc<T> type only works for single threaded scenarios.
+    // A non-compile example for multiple owners of a single piece of data would be the following (using our List type):
+    //     let a = Cons(5, Box::new(Cons(10, Box::new(Nil))));
+    //     let b = Cons(3, Box::new(a));
+    //     let c = Cons(4, Box::new(a));
+    // Obviously this is not allowed, since "a" would be owned by "b", so, the compiler lets you know that "c" cannot own
+    // "a" because "b" owns it
+
+    // Instead, we use an Rc to wrap a resource, and then increase the number of owners of such data by using Rc::clone which increases
+    // the counter of references pointing to that piece of data
+    // Sure, we could add the appropriate references and lifetimes to avoid this scenario, and accounting this use-case.
+    // But, not every scenario is like that, sometimes its usage will outlive the use-case, so instead, we'll use
+    // Rc here to allow the resource to live up to when there are 0 references pointing to it so it gets dropped automatically.
+    // Also, Rc::clone does not "deep-copy"  the data, as opposed to use, say, "list_a.clone()". It just increases the reference counter by 1.
+    let list_a = Rc::new(RcList::Cons(
+        4,
+        Rc::new(RcList::Cons(
+            5,
+            Rc::new(RcList::Cons(6, Rc::new(RcList::Null))),
+        )),
+    ));
+    let list_b = RcList::Cons(7, Rc::clone(&list_a));
+    let list_c = RcList::Cons(8, Rc::clone(&list_a));
+    println!(
+        "RC Count before list_d is created: {}",
+        Rc::strong_count(&list_a)
+    );
+    {
+        let list_d = RcList::Cons(8, Rc::clone(&list_a));
+        println!(
+            "RC Count while list_d exists: {}",
+            Rc::strong_count(&list_a)
+        );
+    }
+    println!(
+        "RC Count after list_d is dropped: {}",
+        Rc::strong_count(&list_a)
+    );
 }
 
 fn from_ref(msg: &str) {
     println!("From ref: {}", msg);
+}
+
+// In the end, there are different ways that deref coercion works:
+// 1.- From a type to another when the target type implementation of Deref is of the second type
+// 2.- From a mutable type to another another mutable type when the target type implementation of DerefMut is of the second type
+// 3.- From a mutable type to another when the target type implementation of Deref  is of the second type
+//
+fn from_ref_mut(msg: &mut str) {
+    for mut item in msg.bytes() {
+        item = 98; // we change it and then print the mutated values
+        print!("{}", item as char);
+    }
+    println!();
 }
 
 // We can also create custom types that can work with the dereference operator!
@@ -150,5 +225,15 @@ impl<T> Deref for CustomBox<T> {
     type Target = T;
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+struct CustomSmartPointer {
+    data: String,
+}
+
+impl Drop for CustomSmartPointer {
+    fn drop(&mut self) {
+        println!("Dropping CustomSmartPointer with data '{}'!", self.data);
     }
 }
