@@ -186,6 +186,18 @@ fn main() {
         "RC Count after list_d is dropped: {}",
         Rc::strong_count(&list_a)
     );
+
+    // In our next example, we'll use another smart pointer, which allows mutability from the outside by using a pattern called interior mutability
+    // called RefCell. The RefCell type allows mutability to the data inside it even if there are immutable references to it.
+    // Borrowing rules are ensured at compile time when using references, Box and Rc, whereas borrowing rules are ensured at runtime with RefCell.
+    // This means that, depending on the type used, the errors we'll get come at different times when working in our program.
+    // References, Rc and Box types ensure borrowing rules at compile time by throwing errors when we violate these rules
+    // The RefCell type ensure borrowing rules at runtime by panicking if we violate these rules via a safe API.
+    // Internally, RefCell implements unsafe code, but the safe API ensures a wrapping API that allows safe usage.
+    // In this example we'll use a Messenger, which will be in charge of sending messages when we reach a quota limit message
+    // about a given "value" simulating a resource consumed.
+
+    // The gauge will point out when we're at 75%, then at 90% and then at our max capacity
 }
 
 fn from_ref(msg: &str) {
