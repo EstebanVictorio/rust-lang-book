@@ -1,4 +1,6 @@
+use smart_pointers_messenger::{Messenger, Tracker};
 use std::boxed::Box;
+use std::cell::RefCell;
 use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
 
@@ -17,6 +19,12 @@ enum List {
 
 enum RcList {
     Cons(i32, Rc<RcList>),
+    Null,
+}
+
+#[derive(Debug)]
+enum RcRefCellList {
+    Cons(Rc<RefCell<u32>>, Rc<RcRefCellList>),
     Null,
 }
 
@@ -198,6 +206,54 @@ fn main() {
     // about a given "value" simulating a resource consumed.
 
     // The gauge will point out when we're at 75%, then at 90% and then at our max capacity
+    let main_messenger = MainMessenger::new();
+    let mut limit_tracker = Tracker::new(&main_messenger, 500);
+    limit_tracker.set_value(10);
+
+    // Another capability of using RefCell is to being able to own multiple mutable owners for a single piece of data.
+    // Going back to our cons list example, we can declare a new type that holds two types: Rc and RefCell.
+    // Rc gives us the capability of owning the single resource by multiple owners, and RefCell allows the interior mutability
+    // so this gives us a counter for owners and each owner could mutate the data inside.
+
+    // We create an Rc that holds a RefCell that has a u32 value which we'll mutate
+    let val = Rc::new(RefCell::new(5));
+
+    // Then we create a const list that holds an Rc clone to the actual value and a null const list value
+    let list_a = Rc::new(RcRefCellList::Cons(
+        Rc::clone(&val),
+        Rc::new(RcRefCellList::Null),
+    ));
+
+    // Afterwards we get another pair of clones for other lists
+    let list_b = RcRefCellList::Cons(Rc::new(RefCell::new(6)), Rc::clone(&list_a));
+    let list_c = RcRefCellList::Cons(Rc::new(RefCell::new(7)), Rc::clone(&list_a));
+
+    // Finally we borrow our resource as mutable and set a new value to it and print the lists so we can see how the data has mutated across owners
+    *val.borrow_mut() = 8;
+    println!("list_a after mutating val: {:?}", list_a);
+    println!("list_b after mutating val: {:?}", list_b);
+    println!("list_c after mutating val: {:?}", list_c);
+
+    // Of course this also follows the borrowing rules at runtime, so, we're protected with panics if we ever go out of these
+    // rules in a rebelious manner
+}
+
+struct MainMessenger {
+    messages: RefCell<Vec<String>>,
+}
+
+impl MainMessenger {
+    fn new() -> Self {
+        MainMessenger {
+            messages: RefCell::new(vec![]),
+        }
+    }
+}
+
+impl Messenger for MainMessenger {
+    fn send(&self, msg: &str) {
+        self.messages.borrow_mut().push(String::from(msg));
+    }
 }
 
 fn from_ref(msg: &str) {
