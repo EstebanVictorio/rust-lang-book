@@ -57,4 +57,14 @@ fn main() {
     // If Uncomment the next line to see that we have a cycle;
     // it will overflow the stack
     // println!("a next item = {:?}", a.tail());
+
+    // A way to protect your programs from reference cycles is strongly related to the count
+    // of references, in this case, the Rc type. Resources cannot be dropped unless the strong_count
+    // from an Rc reaches zero. So, for that matter, Rust also has another smart pointer called Weak<T>.
+    // Weak<T> are weak references, where once they are created, they do not increase the strong count
+    // of an Rc. Instead, as these do not express any ownership relationship, they increase only the weak count
+    // of an Rc. These type of smart pointer references are created when you call the "downgrade()" method on an Rc,
+    // passing down a reference to the Rc.
+    // The main difference of a weak reference from a normal Rc reference is that the weak count of a weak reference
+    // does not need to be zero to be dropped and cleaned up once a program finishes.
 }
