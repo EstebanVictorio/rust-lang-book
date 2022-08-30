@@ -4,7 +4,7 @@
 // These are known as reference cycles.
 
 use std::cell::RefCell;
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 
 #[derive(Debug)]
 enum List {
@@ -67,4 +67,32 @@ fn main() {
     // passing down a reference to the Rc.
     // The main difference of a weak reference from a normal Rc reference is that the weak count of a weak reference
     // does not need to be zero to be dropped and cleaned up once a program finishes.
+
+    // To start an example of this, we'll create a tree with nodes that hold child nodes.
+    let leaf = Rc::new(Node {
+        value: 3,
+        children: RefCell::new(vec![]),
+        parent: RefCell::new(Weak::new()), // we'd also like to know the parent of a leaft, so we add it here starting as a weak reference pointing to nowhere
+    });
+
+    println!("leaf parent: {:?}", leaf.parent.borrow().upgrade());
+
+    let branch = Rc::new(Node {
+        value: 5,
+        parent: RefCell::new(Weak::new()),
+        children: RefCell::new(vec![Rc::clone(&leaf)]),
+    });
+
+    *leaf.parent.borrow_mut() = Rc::downgrade(&branch); // In this part, we set a parent to leaft, which is branch, and now it'll point to branch, not owning it, but by having a weak reference to it
+
+    // And finally printing the references here we notice that we no longer have an infinite output,
+    // but a finite one instead where we state the relationships of the proper ownerships
+    println!("leaf parent: {:?}", leaf.parent.borrow().upgrade());
+}
+
+#[derive(Debug)]
+struct Node {
+    value: i32,
+    children: RefCell<Vec<Rc<Node>>>,
+    parent: RefCell<Weak<Node>>,
 }
