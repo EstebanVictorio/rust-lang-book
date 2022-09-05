@@ -67,12 +67,12 @@ fn main() {
     // passing down a reference to the Rc.
     // The main difference of a weak reference from a normal Rc reference is that the weak count of a weak reference
     // does not need to be zero to be dropped and cleaned up once a program finishes.
-
+    println!("---------");
     // To start an example of this, we'll create a tree with nodes that hold child nodes.
     let leaf = Rc::new(Node {
         value: 3,
         children: RefCell::new(vec![]),
-        parent: RefCell::new(Weak::new()), // we'd also like to know the parent of a leaft, so we add it here starting as a weak reference pointing to nowhere
+        parent: RefCell::new(Weak::new()), // we'd also like to know the parent of a leaf, so we add it here starting as a weak reference pointing to nowhere
     });
 
     println!("leaf parent: {:?}", leaf.parent.borrow().upgrade());
@@ -88,6 +88,47 @@ fn main() {
     // And finally printing the references here we notice that we no longer have an infinite output,
     // but a finite one instead where we state the relationships of the proper ownerships
     println!("leaf parent: {:?}", leaf.parent.borrow().upgrade());
+
+    // Now, we'll explore how the different counts, both strong and weak ones, change depending on the references linked.
+
+    // We'll create another another branch node which will be the new parent of the leaf node, but this time we'll create it in a scope
+    {
+        let branch_2 = Rc::new(Node {
+            value: 6,
+            parent: RefCell::new(Weak::new()),
+            children: RefCell::new(vec![Rc::clone(&leaf)]),
+        });
+
+        *leaf.parent.borrow_mut() = Rc::downgrade(&branch_2);
+
+        println!(
+            "branch_2 strong count: {} | weak count: {}",
+            Rc::strong_count(&branch_2),
+            Rc::weak_count(&branch_2)
+        );
+
+        println!(
+            "leaf | strong count: {}, weak count: {}",
+            Rc::strong_count(&leaf),
+            Rc::weak_count(&leaf)
+        );
+    }
+
+    println!(
+        "leaf | strong count: {}, weak count: {}",
+        Rc::strong_count(&leaf),
+        Rc::weak_count(&leaf)
+    );
+
+    println!("leaf parent: {:?}", leaf.parent.borrow().upgrade());
+
+    // We should keep in mind that this exercise creates two references. This means that "children" are the strong references
+    // While "parent" being the weak one. At some point in this specific scenario in the code (and not in the book),
+    // The leaf variable is left with no "parent", but "branch" has "leaf" as part of its "children"
+
+    // In the end, the weak references will be droppped regardless of their count, but ruled by the strong count of the Rc's involved
+    // Even if we have, say, a weak count of a Weak reference of 3, if the main Rc reference gets to 0, those weak references will be dropped.
+    // This way we ensure we do not have memory leaks and we're safe from overflowing the stack!
 }
 
 #[derive(Debug)]
