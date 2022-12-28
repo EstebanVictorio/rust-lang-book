@@ -51,12 +51,30 @@ fn main() {
 
     let list = vec![1, 2, 3];
 
-    // here we'll have a compile error on the usage of list, because the thread is attempting to use a value which the compiler
+    // here in the following example we'll have a compile error on the usage of list, because the thread is attempting to use a value which the compiler
     // doesn't know if it will outlive the program's execution
-    let handle_2 = thread::spawn(|| {
+
+    // let handle_2 = thread::spawn(|| {
+    //     for e in list.iter() {
+    //         println!("Item: {}", e);
+    //     }
+    // });
+
+    // to overcome and force the ownership of the data around the closure, we should use the "move" reserved word
+    // this will in turn move the ownership of the environment data, such as "list" into the closure, and now
+    // the thread can freely consume the data there
+
+    let handle_2 = thread::spawn(move || {
         for e in list.iter() {
             println!("Item: {}", e);
         }
     });
+
     handle_2.join().unwrap();
+
+    // another scenario that's more plausible is that the data used in the thread
+    // could be dropped before it even gets to execute
+    // the "move" reserved word mechanism forces the ownership to move inside the closure
+    // so its usage after it ensures that the ownership for such data is correct and does not allow
+    // compiling if the thread owns a certain piece of data
 }
