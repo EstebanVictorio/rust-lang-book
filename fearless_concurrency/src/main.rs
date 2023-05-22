@@ -73,8 +73,9 @@ fn main() {
     handle_2.join().unwrap();
 
     // another scenario that's more plausible is that the data used in the thread
-    // could be dropped before it even gets to execute
-    // the "move" reserved word mechanism forces the ownership to move inside the closure
+    // could be dropped before it even gets to execute.
+    // The "move" reserved word mechanism forces the ownership to move inside the closure
     // so its usage after it ensures that the ownership for such data is correct and does not allow
     // compiling if the thread owns a certain piece of data
+    // This also means that we ensure that at compile time, we cannot drop the data before the thread gets to use it
 }

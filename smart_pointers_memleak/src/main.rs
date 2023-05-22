@@ -54,7 +54,7 @@ fn main() {
     // 3.- a is dropped, which decreases the other Rc<List> count by 1
     // 4.- "main()" ends with 1 reference remaining on both Rc<List> counts
 
-    // If Uncomment the next line to see that we have a cycle;
+    // If we uncomment the next line to see that we have a cycle;
     // it will overflow the stack
     // println!("a next item = {:?}", a.tail());
 
