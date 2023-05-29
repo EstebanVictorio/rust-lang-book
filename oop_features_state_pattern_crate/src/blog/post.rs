@@ -4,6 +4,7 @@ pub struct Post {
     state: State,
     content: String,
     revision: String,
+    approvals: u32,
 }
 
 impl Post {
@@ -12,17 +13,44 @@ impl Post {
             state: State::Draft,
             content: String::new(),
             revision: String::new(),
+            approvals: 0,
+        }
+    }
+
+    pub fn state(&self) -> &State {
+        &self.state
+    }
+
+    pub fn approve(&mut self) {
+        self.approvals += 1;
+        if self.approvals > 1 {
+            self.transition(Some(State::Published));
         }
     }
 
     pub fn add_text(&mut self, text: &str) {
-        self.revision.push_str(text);
+        let is_draft = match self.state {
+            State::Draft => true,
+            _ => false,
+        };
 
+        if !is_draft {
+            return;
+        }
+
+        self.revision.push_str(text);
+    }
+
+    fn reject(&mut self) {
         self.transition(Some(State::Draft));
     }
 
-    pub fn approve(&mut self) {
-        self.transition(None);
+    pub fn send_for_review(&mut self) {
+        self.transition(Some(State::Review));
+
+        if false {
+            self.reject();
+        }
     }
 
     pub fn content(&self) -> &str {
