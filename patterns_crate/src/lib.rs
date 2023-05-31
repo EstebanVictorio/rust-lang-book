@@ -36,6 +36,8 @@ mod tests {
             Circle { r: 0 } => println!("r is 0"),
             Circle { r: 1..=5 } => println!("r is between 1 and 5"),
             Circle { r } if r > 5 => println!("r is greater than 5"), // The downside to this is that the compiler won't check for exhaustiveness when using match guard expressions/conditions
+            Circle { r: 8 } | Circle { r: 10 } if r % 2 == 0 => println!("r is 4 or 6 and is even"), // Also, the extra conditions apply to all the arms, not just the one it's in
+            Circle { r: radius @ 9..=11 } => println!("r is {}", radius), // We can also bind the value to a variable using the "@" (at) operator, and use it in the match arm so we have a way to capture whatever matched for the r property while matching
             // We can also just try whatever with the range syntax, expanding all props with any value, as long as it's a Circle
             // This is an irrefutable pattern that it's always true if the above arm is not matched
             // Also, this would work as the underscore match arm
