@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 advanced_features_macros_derive = { path = "./advanced_features_macros_derive" }
 advanced_features_macros_attr = { path = "./advanced_features_macros_attr" }
+advanced_features_macros_function = { path = "./advanced_features_macros_function" }

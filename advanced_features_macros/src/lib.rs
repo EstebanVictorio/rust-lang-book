@@ -35,6 +35,7 @@ mod tests {
     use super::*;
     use advanced_features_macros_attr::property;
     use advanced_features_macros_derive::Greet;
+    use advanced_features_macros_function::add;
     // For procedural macros, implementations don't rely on expressions as in declarative macros.
     // Below we have a simple implementation of a trait that prints its own message
     // However, we don't provide a default implementation for the trait
@@ -71,6 +72,10 @@ mod tests {
     #[derive(Greet)]
     struct PoliceOfficer;
 
+    enum A {
+        B,
+    }
+
     #[test]
     fn it_greets_each() {
         RestaurantServer::greet();
@@ -83,6 +88,7 @@ mod tests {
 
         println!("Message: {}", mail.message);
         println!("Number: {}", postal_code.number);
+        println!("Proc Macro Sum: {}", add!(5 + 2, 3));
 
         greet_each!("Alice", "Bob", "Carol");
     }
