@@ -1,0 +1,11 @@
+[package]
+name = "advanced_features_macros"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+advanced_features_macros_derive = { path = "./advanced_features_macros_derive" }
+advanced_features_macros_attr = { path = "./advanced_features_macros_attr" }
+advanced_features_macros_function = { path = "./advanced_features_macros_function" }
