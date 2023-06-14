@@ -3,20 +3,38 @@ use std::{
     io::{prelude::*, BufReader, Write},
     net::TcpListener,
     net::TcpStream,
+    thread,
+    time::Duration,
 };
 
 const HOST: &'static str = "127.0.0.1";
 const PORT: &'static str = "8000";
+const METHOD: usize = 0;
+const PATH: usize = 1;
+const PROTOCOL: usize = 2;
 
 enum Method {
     GET,
     POST,
 }
 
-fn method(request: &Vec<String>) -> Method {
-    let method_line = request.into_iter().next().unwrap();
+struct Route {
+    method: Method,
+    path: String,
+    handler: fn(),
+}
 
-    if method_line == "GET / HTTP/1.1" {
+struct Router {
+    routes: Vec<Route>,
+}
+
+fn method(request: &Vec<String>) -> Method {
+    let route_line = request.into_iter().next().unwrap();
+    let route: Vec<_> = route_line.split(' ').collect();
+    let method = route[METHOD];
+    let path = route[PATH];
+
+    if method == "GET" {
         return Method::GET;
     }
 
@@ -40,33 +58,36 @@ fn main() {
             }
         };
 
-        let request = handle_connection(&mut stream);
-        let method = method(&request);
-        let status = match method {
-            Method::GET => (200, "OK"),
-            Method::POST => (404, "NOT FOUND"),
-        };
-        let (code, msg) = status;
-        println!(
-            "Method: {:?}",
-            match method {
-                Method::GET => "GET",
-                Method::POST => "POST",
-            }
-        );
-        let page = match method {
-            Method::GET => fs::read_to_string("src/index.html").unwrap(),
-            Method::POST => fs::read_to_string("src/404.html").unwrap(),
-        };
-        let length = page.len();
-        stream
-            .write_fmt(format_args!(
-                "HTTP/1.1 {} {}\r\nContent-Length: {}\r\n\r\n{}",
-                code, msg, length, page
-            ))
-            .unwrap();
+        thread::spawn(move || {
+            let request = handle_connection(&mut stream);
+            let method = method(&request);
+            let status = match method {
+                Method::GET => (200, "OK"),
+                _ => (404, "NOT FOUND"),
+            };
+            let (code, msg) = status;
+            println!(
+                "Method: {:?}",
+                match method {
+                    Method::GET => "GET",
+                    Method::POST => "POST",
+                }
+            );
+            let page = match method {
+                Method::GET => fs::read_to_string("src/index.html").unwrap(),
+                _ => fs::read_to_string("src/404.html").unwrap(),
+            };
+            let length = page.len();
+            thread::sleep(Duration::from_secs(5));
+            stream
+                .write_fmt(format_args!(
+                    "HTTP/1.1 {} {}\r\nContent-Length: {}\r\n\r\n{}",
+                    code, msg, length, page
+                ))
+                .unwrap();
 
-        println!("Connection established!");
+            println!("Connection established!");
+        });
     }
 }
 
