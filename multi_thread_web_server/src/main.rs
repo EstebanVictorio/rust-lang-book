@@ -1,3 +1,4 @@
+use multi_thread_web_server_pool::WorkerPool;
 use std::{
     fs,
     io::{prelude::*, BufReader, Write},
@@ -18,21 +19,28 @@ enum Method {
     POST,
 }
 
-struct Route {
-    method: Method,
-    path: String,
-    handler: fn(),
+enum Route {
+    Home,
+    Sleep,
+    NotFound,
 }
 
-struct Router {
-    routes: Vec<Route>,
+fn route(request: &Vec<String>) -> Route {
+    let route_line = request.into_iter().next().unwrap();
+    let route: Vec<_> = route_line.split(' ').collect();
+    let path = route[PATH];
+
+    match path {
+        "/" => Route::Home,
+        "/sleep" => Route::Sleep,
+        _ => Route::NotFound,
+    }
 }
 
 fn method(request: &Vec<String>) -> Method {
     let route_line = request.into_iter().next().unwrap();
     let route: Vec<_> = route_line.split(' ').collect();
     let method = route[METHOD];
-    let path = route[PATH];
 
     if method == "GET" {
         return Method::GET;
@@ -42,6 +50,7 @@ fn method(request: &Vec<String>) -> Method {
 }
 
 fn main() {
+    let pool = WorkerPool::new(4);
     let address = String::from(HOST) + ":" + PORT;
     let listener = match TcpListener::bind(address) {
         Ok(listener) => listener,
@@ -58,27 +67,26 @@ fn main() {
             }
         };
 
-        thread::spawn(move || {
+        pool.execute(move |id: usize| {
             let request = handle_connection(&mut stream);
             let method = method(&request);
+            let route = route(&request);
             let status = match method {
                 Method::GET => (200, "OK"),
                 _ => (404, "NOT FOUND"),
             };
             let (code, msg) = status;
-            println!(
-                "Method: {:?}",
-                match method {
-                    Method::GET => "GET",
-                    Method::POST => "POST",
+
+            let page = match (method, route) {
+                (Method::GET, Route::Home) => fs::read_to_string("src/index.html").unwrap(),
+                (Method::GET, Route::Sleep) => {
+                    thread::sleep(Duration::from_secs(5));
+                    fs::read_to_string("src/heavy-task.html").unwrap()
                 }
-            );
-            let page = match method {
-                Method::GET => fs::read_to_string("src/index.html").unwrap(),
                 _ => fs::read_to_string("src/404.html").unwrap(),
             };
             let length = page.len();
-            thread::sleep(Duration::from_secs(5));
+
             stream
                 .write_fmt(format_args!(
                     "HTTP/1.1 {} {}\r\nContent-Length: {}\r\n\r\n{}",
@@ -87,6 +95,8 @@ fn main() {
                 .unwrap();
 
             println!("Connection established!");
+            println!("Worker {id} finished task.");
+            Ok(())
         });
     }
 }
@@ -99,6 +109,6 @@ fn handle_connection(stream: &mut TcpStream) -> Vec<String> {
         .take_while(|line| !line.is_empty())
         .collect();
 
-    println!("Request: {:?}", request);
+    // println!("Request: {:?}", request);
     request
 }
