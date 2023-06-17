@@ -14,7 +14,13 @@ impl Drop for WorkerPool {
     fn drop(&mut self) {
         for worker in &mut self.workers {
             println!("Shutting down worker {}", worker.id);
-            todo!("Wrap Option for thread");
+            // For this, thread needs to be an Option given that the worker pool would take ownership of the thread,
+            // and we need to be able to take ownership back to join the thread, since the join() method takes ownership of its argument
+            // So we use "take()" from the Option thread to take the value out of the Option which would be the handle of the thread, and then join the thread
+            // to the main thread so it can finish its work. The main thread will wait for it to finish before continuing.
+            if let Some(thread) = worker.thread.take() {
+                thread.join().unwrap();
+            }
         }
     }
 }
@@ -28,14 +34,14 @@ impl Worker {
     fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Task>>>) -> Self {
         Self {
             id,
-            thread: thread::spawn(move || loop {
+            thread: Some(thread::spawn(move || loop {
                 let task = receiver.lock().unwrap().recv().unwrap();
                 println!("Worker {id} starting task, running task...");
                 match task(id) {
                     Ok(_) => println!("Worker {id} finished task successfully."),
                     Err(e) => println!("Worker {id} failed task with error: {e}"),
                 }
-            }),
+            })),
         }
     }
 }
