@@ -7,11 +7,14 @@ type Task = Box<dyn FnOnce(usize) -> Result<(), std::io::Error> + Send + 'static
 
 pub struct WorkerPool {
     workers: Vec<Worker>,
-    sender: mpsc::Sender<Task>,
+    sender: Option<mpsc::Sender<Task>>,
 }
 
 impl Drop for WorkerPool {
     fn drop(&mut self) {
+        println!("Dropping sender, no more tasks will be accepted.");
+        drop(self.sender.take());
+        println!("Dropped sender and dropping all workers, no more tasks will be accepted beyond this point, \"main\" thread awaiting all current workers to finish.");
         for worker in &mut self.workers {
             println!("Shutting down worker {}", worker.id);
             // For this, thread needs to be an Option given that the worker pool would take ownership of the thread,
@@ -32,16 +35,31 @@ struct Worker {
 
 impl Worker {
     fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Task>>>) -> Self {
+        let thread = thread::spawn(move || loop {
+            let resolved = receiver.lock().unwrap().recv();
+
+            match resolved {
+                Ok(task) => {
+                    println!("Worker {} got a job; executing.", id);
+                    match task(id) {
+                        Ok(_) => {
+                            println!("Worker {} finished successfully.", id);
+                        }
+                        Err(_) => {
+                            println!("Worker {} failed to execute job.", id);
+                        }
+                    }
+                }
+                Err(_) => {
+                    println!("Worker {} not capable to receive task, shutting down.", id);
+                    break;
+                }
+            }
+        });
+
         Self {
             id,
-            thread: Some(thread::spawn(move || loop {
-                let task = receiver.lock().unwrap().recv().unwrap();
-                println!("Worker {id} starting task, running task...");
-                match task(id) {
-                    Ok(_) => println!("Worker {id} finished task successfully."),
-                    Err(e) => println!("Worker {id} failed task with error: {e}"),
-                }
-            })),
+            thread: Some(thread),
         }
     }
 }
@@ -62,7 +80,10 @@ impl WorkerPool {
             workers.push(Worker::new(i, Arc::clone(&mutex)));
         }
 
-        WorkerPool { workers, sender }
+        WorkerPool {
+            workers,
+            sender: Some(sender),
+        }
     }
 
     pub fn execute<F>(&self, f: F)
@@ -70,7 +91,7 @@ impl WorkerPool {
         F: FnOnce(usize) -> Result<(), std::io::Error> + Send + 'static,
     {
         let task = Box::new(f);
-        self.sender.send(task).unwrap();
+        self.sender.as_ref().unwrap().send(task).unwrap();
     }
 }
 

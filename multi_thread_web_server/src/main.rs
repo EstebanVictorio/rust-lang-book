@@ -59,7 +59,11 @@ fn main() {
         }
     };
 
-    for stream in listener.incoming() {
+    // Commenting out the take(2) will make the server run forever.
+    // For our purposes implementing the multi threaded web server, we'll remove the sender and main thread join mechanincs to keep it working as intended.
+    for stream in listener.incoming()
+    /*.take(2)*/
+    {
         let mut stream = match stream {
             Ok(stream) => stream,
             Err(e) => {
@@ -80,7 +84,7 @@ fn main() {
             let page = match (method, route) {
                 (Method::GET, Route::Home) => fs::read_to_string("src/index.html").unwrap(),
                 (Method::GET, Route::Sleep) => {
-                    thread::sleep(Duration::from_secs(5));
+                    thread::sleep(Duration::from_secs(10));
                     fs::read_to_string("src/heavy-task.html").unwrap()
                 }
                 _ => fs::read_to_string("src/404.html").unwrap(),
@@ -99,6 +103,8 @@ fn main() {
             Ok(())
         });
     }
+
+    println!("Shutting down.");
 }
 
 fn handle_connection(stream: &mut TcpStream) -> Vec<String> {
